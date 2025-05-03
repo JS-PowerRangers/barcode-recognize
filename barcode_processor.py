@@ -6,8 +6,6 @@ import cv2 # Import cv2 neu ban muon tien xu ly them o day
 
 def process_barcodes(frame):
     """
-    Phat hien va giai ma CHI LOAI EAN-13 trong frame va do latency.
-
     Args:
         frame: Frame anh dau vao (NumPy array - co the la anh mau hoac xam).
 
@@ -19,12 +17,30 @@ def process_barcodes(frame):
     start_time = time.perf_counter()
 
     # --- Chi dinh CHI TIM EAN-13 ---
-    target_symbols = [ZBarSymbol.EAN13, ZBarSymbol.QRCODE]
+    # target_symbols = [ZBarSymbol.EAN13]
+    # -----------------------------
+    
+    
+    # --- TIEN XU LY (THU NGHIEM) ---
+    # 1. Dam bao la anh xam (neu frame dau vao co the la anh mau)
+    if len(frame.shape) == 3:
+        proc_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    else:
+        proc_frame = frame # Neu da la anh xam
+
+    # 2. Thu lam mo nhe (GIUP GIAM NHIEU) - Bo comment de thu
+    proc_frame = cv2.GaussianBlur(proc_frame, (3, 3), 0)
+
+    # 3. Thu nhi phan hoa (LAM NOI BARCODE) - Bo comment de thu
+    # _, proc_frame = cv2.threshold(proc_frame, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    # Hoac dung Adaptive Thresholding neu anh sang khong deu
+    proc_frame = cv2.adaptiveThreshold(proc_frame, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
     # -----------------------------
 
     # Su dung frame dau vao (co the la anh mau hoac xam tu main.py)
     # Them tham so `symbols` de chi dinh loai barcode can tim
-    barcodes = pyzbar.decode(frame, symbols=target_symbols)
+    # barcodes = pyzbar.decode(frame, symbols=target_symbols)
+    barcodes = pyzbar.decode(proc_frame)
 
     # --- DEBUG PRINT VAN GIU LAI ---
     # print(f"DEBUG: pyzbar.decode (EAN-13 only) returned: {barcodes}")
@@ -34,24 +50,18 @@ def process_barcodes(frame):
 
     processed_results = []
     if barcodes:
-        # print(f"--- Found {len(barcodes)} potential EAN-13 barcode(s) ---") # Co the bo comment neu muon
         for barcode in barcodes:
-            # Loai barcode se luon la EAN13 o day, nhung van kiem tra cho chac
-            if barcode.type == 'EAN13':
-                try:
-                    barcode_data = barcode.data.decode('utf-8')
-                except UnicodeDecodeError: # It xay ra voi EAN13 nhung van de phong
-                    barcode_data = str(barcode.data)
-                    print(f"[Warning] UnicodeDecodeError for EAN13 data: {barcode.data}")
+            try:
+                barcode_data = barcode.data.decode('utf-8')
+            except UnicodeDecodeError:
+                 barcode_data = str(barcode.data)
+                 print(f"[Warning] UnicodeDecodeError for barcode data ({barcode.type}): {barcode.data}")
 
-                barcode_info = {
-                    'data': barcode_data,
-                    'type': barcode.type, # Se la 'EAN13'
-                    'rect': barcode.rect
-                }
-                processed_results.append(barcode_info)
-            # else: # Bo qua neu vi ly do nao do no tra ve loai khac (du da loc)
-                # print(f"DEBUG: Ignored detected symbol of type {barcode.type}")
-                # pass
+            barcode_info = {
+                'data': barcode_data,
+                'type': str(barcode.type),
+                'rect': barcode.rect 
+            }
+            processed_results.append(barcode_info)
 
     return processed_results, latency

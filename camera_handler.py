@@ -12,9 +12,9 @@ class CameraHandler:
             return
 
         # Tuy chon: Co gang dat do phan giai neu duoc dinh nghia trong config
-        # if hasattr(config, 'REQUESTED_WIDTH') and hasattr(config, 'REQUESTED_HEIGHT'):
-        #     self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, config.REQUESTED_WIDTH)
-        #     self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, config.REQUESTED_HEIGHT)
+        if hasattr(config, 'REQUESTED_WIDTH') and hasattr(config, 'REQUESTED_HEIGHT'):
+            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, config.REQUESTED_WIDTH)
+            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, config.REQUESTED_HEIGHT)
 
         # Lay do phan giai thuc te
         self.width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
