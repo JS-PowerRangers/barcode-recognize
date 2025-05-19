@@ -1,0 +1,6 @@
+opencv-python 
+pyzbar 
+pymongo 
+fastapi 
+uvicorn
+requests 

@@ -1,66 +1,47 @@
-# ------------ File: barcode_processor.py ------------
 from pyzbar import pyzbar
-from pyzbar.pyzbar import ZBarSymbol # Quan trong: Import ZBarSymbol
+from pyzbar.pyzbar import ZBarSymbol
 import time
-import cv2 # Import cv2 neu ban muon tien xu ly them o day
+import cv2 # Keep import in case future preprocessing is added
 
-def process_barcodes(frame):
+def process_barcodes(gray_frame):
     """
+    Processes a grayscale frame to detect EAN-13 barcodes.
+
     Args:
-        frame: Frame anh dau vao (NumPy array - co the la anh mau hoac xam).
+        gray_frame: Grayscale image frame (NumPy array).
 
     Returns:
-        tuple: (list_of_barcodes, latency)
-            list_of_barcodes: Danh sach cac dictionary chua thong tin EAN-13 tim duoc.
-            latency: Thoi gian xu ly (giay).
+        tuple: (list_of_barcodes_info, latency)
+            list_of_barcodes_info: List of dictionaries containing barcode info (data, type, rect).
+                                   Returns empty list if no barcodes found.
+            latency: Processing time in seconds.
     """
     start_time = time.perf_counter()
 
-    # --- Chi dinh CHI TIM EAN-13 ---
-    # target_symbols = [ZBarSymbol.EAN13]
-    # -----------------------------
-    
-    
-    # --- TIEN XU LY (THU NGHIEM) ---
-    # 1. Dam bao la anh xam (neu frame dau vao co the la anh mau)
-    if len(frame.shape) == 3:
-        proc_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    else:
-        proc_frame = frame # Neu da la anh xam
+    # Specify to only look for EAN-13 symbols
+    target_symbols = [ZBarSymbol.EAN13]
 
-    # 2. Thu lam mo nhe (GIUP GIAM NHIEU) - Bo comment de thu
-    proc_frame = cv2.GaussianBlur(proc_frame, (3, 3), 0)
-
-    # 3. Thu nhi phan hoa (LAM NOI BARCODE) - Bo comment de thu
-    # _, proc_frame = cv2.threshold(proc_frame, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    # Hoac dung Adaptive Thresholding neu anh sang khong deu
-    proc_frame = cv2.adaptiveThreshold(proc_frame, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
-    # -----------------------------
-
-    # Su dung frame dau vao (co the la anh mau hoac xam tu main.py)
-    # Them tham so `symbols` de chi dinh loai barcode can tim
-    # barcodes = pyzbar.decode(frame, symbols=target_symbols)
-    barcodes = pyzbar.decode(proc_frame)
-
-    # --- DEBUG PRINT VAN GIU LAI ---
-    # print(f"DEBUG: pyzbar.decode (EAN-13 only) returned: {barcodes}")
-    # --- KET THUC DEBUG PRINT ---
+    # Decode barcodes. Pass the grayscale frame directly.
+    # Add 'symbols' argument to restrict types.
+    barcodes = pyzbar.decode(gray_frame, symbols=target_symbols)
 
     latency = time.perf_counter() - start_time
 
     processed_results = []
     if barcodes:
         for barcode in barcodes:
+            # pyzbar returns bytes, decode to string
             try:
                 barcode_data = barcode.data.decode('utf-8')
             except UnicodeDecodeError:
+                 # Handle cases where data might not be UTF-8
                  barcode_data = str(barcode.data)
                  print(f"[Warning] UnicodeDecodeError for barcode data ({barcode.type}): {barcode.data}")
 
             barcode_info = {
                 'data': barcode_data,
                 'type': str(barcode.type),
-                'rect': barcode.rect 
+                'rect': barcode.rect # (x, y, width, height) tuple
             }
             processed_results.append(barcode_info)
 

@@ -1,45 +1,46 @@
 import cv2
-import config # Import file config de lay CAMERA_INDEX
+import config
 
 class CameraHandler:
+    """Handles camera initialization, frame reading, and release."""
     def __init__(self, camera_index=config.CAMERA_INDEX):
-        print(f"Dang khoi tao camera voi index: {camera_index}...")
+        print(f"Initializing camera with index: {camera_index}...")
         self.cap = cv2.VideoCapture(camera_index)
 
         if not self.cap.isOpened():
-            print(f"Loi: Khong the mo camera voi index {camera_index}")
-            self.cap = None # Dat la None de kiem tra sau nay
+            print(f"Error: Could not open camera with index {camera_index}")
+            self.cap = None
             return
 
-        # Tuy chon: Co gang dat do phan giai neu duoc dinh nghia trong config
+        # Attempt to set resolution if specified in config
         if hasattr(config, 'REQUESTED_WIDTH') and hasattr(config, 'REQUESTED_HEIGHT'):
             self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, config.REQUESTED_WIDTH)
             self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, config.REQUESTED_HEIGHT)
 
-        # Lay do phan giai thuc te
+        # Get actual resolution
         self.width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         self.height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        print(f"Camera mo thanh cong. Do phan giai: {self.width}x{self.height}")
+        print(f"Camera opened successfully. Resolution: {self.width}x{self.height}")
 
     def is_opened(self):
-        """Kiem tra camera co duoc mo thanh cong khong."""
+        """Checks if the camera is successfully opened."""
         return self.cap is not None and self.cap.isOpened()
 
     def read_frame(self):
-        """Doc mot frame tu camera."""
+        """Reads a frame from the camera."""
         if not self.is_opened():
             return False, None
         ret, frame = self.cap.read()
         return ret, frame
 
     def release(self):
-        """Giai phong camera."""
+        """Releases the camera resource."""
         if self.cap is not None:
-            print("Giai phong camera...")
+            print("Releasing camera...")
             self.cap.release()
 
     def get_resolution(self):
-        """Tra ve do phan giai cua camera."""
+        """Returns the resolution of the camera."""
         if not self.is_opened():
             return None, None
         return self.width, self.height
