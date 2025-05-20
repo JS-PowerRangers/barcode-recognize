@@ -28,4 +28,4 @@ MONGO_COLLECTION = "products"          # Your collection name
 API_HOST = "127.0.0.1" # Host for the API server
 API_PORT = 8000        # Port for the API server
 # Target HTTP POST Endpoint
-TARGET_POST_URL = "http://localhost:5000/add_to_cart" # <-- Flutter Server
+TARGET_POST_URL = "http://localhost:8088/add_to_cart" # <-- Flutter Server
